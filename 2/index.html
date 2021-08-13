@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>21200231</title>
+</head>
+
+<body>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+    <canvas id="canvas"></canvas>
+    <script>
+        var canvas = document.getElementById("canvas");
+        canvas.height = canvas.clientHeight;
+        canvas.width = canvas.clientWidth;
+        var e = canvas.getContext('2d');
+        var down = false;
+        var mouse = {
+            x: 0,
+            y: 0
+        }
+
+        e.lineCap = "round";
+        e.lineJoin = "round";
+        e.width = 1;
+        e.imageSmoothingEnabled = true;
+        e.shadowBlur = 5;
+
+        e.moveTo(canvas.width / 2, canvas.height / 2);
+        setInterval(() => {
+            e.lineWidth = Math.floor(Math.random() * 50);
+            e.strokeStyle = '#' + Math.floor(Math.random() * 16777215).toString(16);
+            e.lineTo(Math.floor(Math.random() * canvas.width), Math.floor(Math.random() * canvas.height));
+            e.stroke()
+        }, 1)
+    </script>
+</body>
+
+</html>

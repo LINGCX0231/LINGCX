@@ -1,0 +1,227 @@
+﻿<html><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蠢龙直播站</title>
+    <link rel="stylesheet" type="text/css" href="css/demo.css">
+    <link href="css/bootstrap-4.0.0.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="mainContainer">
+  <div>
+     <div class="container-fluid">
+    <div id="streamURL" class="">
+        <div class="url-input">
+            <label for="sURL" style="width: 128px; height: 24px;">流媒体源(FLV):</label>
+            <input id="sURL" type="text" value="
+https://js.live-play.acgvideo.com/live-js/708655/live_25828081_6129630.flv?wsSecret=0c8ce6d06f76fddc6c38a16a5eb6f73a&wsTime=1585490251&trid=c3c4c98d06044787a8f320f5ebbcc4c8&pt=web&oi=0&order=1&sig=no&platform=web&pSession=atcDyQs9-3E8H-48sk-fcE6-94fN57k77ZY0
+" style="margin-left: 0px; height: 24px; width: 320px;">
+			<button onclick="switch_mds()" style="height: 24px">JSON</button>
+        </div>
+        <div class="options">
+            <input type="checkbox" id="isLive" onchange="saveSettings()" checked=""> 
+            <label for="isLive">直播</label>
+            <input type="checkbox" id="withCredentials" onchange="saveSettings()">
+            <label for="withCredentials">需要身份验证</label>
+            <input type="checkbox" id="hasAudio" onchange="saveSettings()" checked="">
+            <label for="hasAudio">音频流</label>
+            <input type="checkbox" id="hasVideo" onchange="saveSettings()" checked="">
+            <label for="hasVideo">视频流</label>
+			<button onclick="flv_load()" type="button">加载</button>
+			<button onclick="flv_start()" type="button">播放</button>
+			<button onclick="flv_pause()" type="button">暂停</button>
+			<input style="width:100%" type="text" name="seekpoint" value="
+https://js.live-play.acgvideo.com/live-js/708655/live_25828081_6129630.flv?wsSecret=0c8ce6d06f76fddc6c38a16a5eb6f73a&wsTime=1585490251&trid=c3c4c98d06044787a8f320f5ebbcc4c8&pt=web&oi=0&order=1&sig=no&platform=web&pSession=atcDyQs9-3E8H-48sk-fcE6-94fN57k77ZY0
+" class="mt-0" >
+        </div>
+    </div>
+    <div id="mediaSourceURL" class="hidden">
+        <div class="url-input">
+            <label for="msURL" style="width: 128px; height: 24px;">媒体源(JSON)：</label>
+            <input id="msURL" type="text" value="
+http://127.0.0.1/flv/7182741.json
+            "  style="margin-left: 0px; height: 24px; width: 320px;">
+            <button onclick="switch_url()" style="height: 24px">URL</button>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<div class="video-container">
+    <div>
+        <video name="videoElement" class="centeredVideo" controls="" autoplay="" src="blob:http://bilibili.github.io/ed434e35-496d-4ef6-8e8a-867ffff99b2d"></video>
+    </div>
+</div>
+
+
+<p>输出日志
+    <textarea name="logcatbox" class="logcatBox" rows="10" readonly=""></textarea></p>
+</div>
+<script src="js/flv.js"></script>
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/popper.min.js"></script>
+<script src="js/bootstrap-4.0.0.js"></script>
+<script>
+    var checkBoxFields = ['isLive', 'withCredentials', 'hasAudio', 'hasVideo'];
+    var streamURL, mediaSourceURL;
+
+    function flv_load() {
+        console.log('isSupported: ' + flvjs.isSupported());
+        if (mediaSourceURL.className === '') {
+            var url = document.getElementById('msURL').value;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onload = function (e) {
+                var mediaDataSource = JSON.parse(xhr.response);
+                flv_load_mds(mediaDataSource);
+            }
+            xhr.send();
+        } else {
+            var i;
+            var mediaDataSource = {
+                type: 'flv'
+            };
+            for (i = 0; i < checkBoxFields.length; i++) {
+                var field = checkBoxFields[i];
+                /** @type {HTMLInputElement} */
+                var checkbox = document.getElementById(field);
+                mediaDataSource[field] = checkbox.checked;
+            }
+            mediaDataSource['url'] = document.getElementById('sURL').value;
+            console.log('MediaDataSource', mediaDataSource);
+            flv_load_mds(mediaDataSource);
+        }
+    }
+
+    function flv_load_mds(mediaDataSource) {
+        var element = document.getElementsByName('videoElement')[0];
+        if (typeof player !== "undefined") {
+            if (player != null) {
+                player.unload();
+                player.detachMediaElement();
+                player.destroy();
+                player = null;
+            }
+        }
+        player = flvjs.createPlayer(mediaDataSource, {
+            enableWorker: false,
+            lazyLoadMaxDuration: 3 * 60,
+            seekType: 'range',
+        });
+        player.attachMediaElement(element);
+        player.load();
+    }
+
+    function flv_start() {
+        player.play();
+    }
+
+    function flv_pause() {
+        player.pause();
+    }
+
+    function flv_destroy() {
+        player.pause();
+        player.unload();
+        player.detachMediaElement();
+        player.destroy();
+        player = null;
+    }
+
+    function flv_seekto() {
+        var input = document.getElementsByName('seekpoint')[0];
+        player.currentTime = parseFloat(input.value);
+    }
+
+    function switch_url() {
+        streamURL.className = '';
+        mediaSourceURL.className = 'hidden';
+        saveSettings();
+    }
+
+    function switch_mds() {
+        streamURL.className = 'hidden';
+        mediaSourceURL.className = '';
+        saveSettings();
+    }
+
+    function ls_get(key, def) {
+        try {
+            var ret = localStorage.getItem('flvjs_demo.' + key);
+            if (ret === null) {
+                ret = def;
+            }
+            return ret;
+        } catch (e) {}
+        return def;
+    }
+
+    function ls_set(key, value) {
+        try {
+            localStorage.setItem('flvjs_demo.' + key, value);
+        } catch (e) {}
+    }
+
+    function saveSettings() {
+        if (mediaSourceURL.className === '') {
+            ls_set('inputMode', 'MediaDataSource');
+        } else {
+            ls_set('inputMode', 'StreamURL');
+        }
+        var i;
+        for (i = 0; i < checkBoxFields.length; i++) {
+            var field = checkBoxFields[i];
+            /** @type {HTMLInputElement} */
+            var checkbox = document.getElementById(field);
+            ls_set(field, checkbox.checked ? '1' : '0');
+        }
+        var msURL = document.getElementById('msURL');
+        var sURL = document.getElementById('sURL');
+        ls_set('msURL', msURL.value);
+        ls_set('sURL', sURL.value);
+        console.log('save');
+    }
+
+    function loadSettings() {
+        var i;
+        for (i = 0; i < checkBoxFields.length; i++) {
+            var field = checkBoxFields[i];
+            /** @type {HTMLInputElement} */
+            var checkbox = document.getElementById(field);
+            var c = ls_get(field, checkbox.checked ? '1' : '0');
+            checkbox.checked = c === '1' ? true : false;
+        }
+
+        var msURL = document.getElementById('msURL');
+        var sURL = document.getElementById('sURL');
+        msURL.value = ls_get('msURL', msURL.value);
+        sURL.value = ls_get('sURL', sURL.value);
+        if (ls_get('inputMode', 'StreamURL') === 'StreamURL') {
+            switch_url();
+        } else {
+            switch_mds();
+        }
+    }
+
+    function showVersion() {
+        var version = flvjs.version;
+        document.title = document.title + " (v" + version + ")";
+    }
+
+    var logcatbox = document.getElementsByName('logcatbox')[0];
+    flvjs.LoggingControl.addLogListener(function(type, str) {
+        logcatbox.value = logcatbox.value + str + '\n';
+        logcatbox.scrollTop = logcatbox.scrollHeight;
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        streamURL = document.getElementById('streamURL');
+        mediaSourceURL = document.getElementById('mediaSourceURL');
+        loadSettings();
+        showVersion();
+        flv_load();
+    });
+</script>
+</body></html>
